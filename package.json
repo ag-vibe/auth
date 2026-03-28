@@ -1,16 +1,16 @@
 {
-  "name": "auth",
-  "version": "0.0.0",
-  "description": "A starter for creating a TypeScript package.",
-  "homepage": "https://github.com/author/library#readme",
+  "name": "@ag-vibe/auth",
+  "version": "0.1.0",
+  "description": "Authentication SDK for the ag-vibe ecosystem (allinone backend).",
+  "homepage": "https://github.com/wibus-wee/ag-vibe-auth#readme",
   "bugs": {
-    "url": "https://github.com/author/library/issues"
+    "url": "https://github.com/wibus-wee/ag-vibe-auth/issues"
   },
   "license": "MIT",
-  "author": "Author Name <author.name@mail.com>",
+  "author": "wibus-wee",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/author/library.git"
+    "url": "git+https://github.com/wibus-wee/ag-vibe-auth.git"
   },
   "files": [
     "dist"
@@ -31,10 +31,15 @@
     "prepublishOnly": "vp run build",
     "prepare": "vp config"
   },
+  "dependencies": {
+    "ofetch": "^1.4.1",
+    "zustand": "^5.0.12"
+  },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "@typescript/native-preview": "7.0.0-dev.20260316.1",
     "bumpp": "^11.0.1",
+    "happy-dom": "^20.8.9",
     "typescript": "^5.9.3",
     "vite-plus": "^0.1.11"
   },
