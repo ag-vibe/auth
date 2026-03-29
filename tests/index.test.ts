@@ -269,6 +269,34 @@ test("applyTo skips auth endpoints", async () => {
   expect(result.status).toBe(401);
 });
 
+test("applyTo skips auth endpoints with query string", async () => {
+  auth.store.getState().setSession({ accessToken: "tok", refreshToken: "ref" });
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+
+  type InterceptorFn = (
+    response: Response,
+    request: Request,
+    options: { serializedBody?: unknown; signal?: AbortSignal },
+  ) => Promise<Response> | Response;
+
+  const interceptors: InterceptorFn[] = [];
+  const mockClient = {
+    interceptors: { response: { use: (fn: InterceptorFn) => interceptors.push(fn) } },
+  };
+
+  auth.applyTo(mockClient);
+
+  const req = new Request("http://localhost:8080/api/v1/auth/refresh?tenant=demo", {
+    method: "POST",
+  });
+  const res = new Response("Unauthorized", { status: 401 });
+
+  const result = await interceptors[0]!(res, req, {});
+  expect(result.status).toBe(401);
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
 test("applyTo skips sign-out endpoint", async () => {
   auth.store.getState().setSession({ accessToken: "tok", refreshToken: "ref" });
 
@@ -290,6 +318,40 @@ test("applyTo skips sign-out endpoint", async () => {
 
   const result = await interceptors[0]!(res, req, {});
   expect(result.status).toBe(401);
+});
+
+test("applyTo respects custom authEndpointPaths", async () => {
+  const customAuth = createAuthClient({
+    baseUrl: "http://localhost:8080/api/v1",
+    appId: "custom",
+    authEndpointPaths: ["/identity/token/refresh"],
+  });
+  customAuth.store.getState().setSession({ accessToken: "tok", refreshToken: "ref" });
+
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+
+  type InterceptorFn = (
+    response: Response,
+    request: Request,
+    options: { serializedBody?: unknown; signal?: AbortSignal },
+  ) => Promise<Response> | Response;
+
+  const interceptors: InterceptorFn[] = [];
+  const mockClient = {
+    interceptors: { response: { use: (fn: InterceptorFn) => interceptors.push(fn) } },
+  };
+
+  customAuth.applyTo(mockClient);
+
+  const req = new Request("http://localhost:8080/api/v1/identity/token/refresh?tenant=demo", {
+    method: "POST",
+  });
+  const res = new Response("Unauthorized", { status: 401 });
+
+  const result = await interceptors[0]!(res, req, {});
+  expect(result.status).toBe(401);
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
 test("applyTo retries with JSON body for object serializedBody", async () => {

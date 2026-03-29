@@ -31,6 +31,23 @@ export interface AuthClientConfig {
    * @example "dashboard"
    */
   appId: string;
+
+  /**
+   * Paths treated as auth endpoints by the 401 retry interceptor.
+   *
+   * Requests that receive 401 for these paths are not auto-refreshed/retried,
+   * preventing accidental loops on auth flows.
+   *
+   * Defaults to:
+   * - `/auth/sign-in`
+   * - `/auth/sign-up`
+   * - `/auth/sign-out`
+   * - `/auth/refresh`
+   *
+   * Matching is suffix-based on normalized pathname, so both `/auth/refresh`
+   * and `/api/v1/auth/refresh?foo=1` match.
+   */
+  authEndpointPaths?: readonly string[];
 }
 
 /**
@@ -78,12 +95,37 @@ export interface AuthClient {
 
 /** HTTP status codes indicating the credentials themselves are invalid. */
 const AUTH_FAILURE_STATUSES = new Set([401, 403]);
+const DEFAULT_AUTH_ENDPOINT_PATHS = [
+  "/auth/sign-in",
+  "/auth/sign-up",
+  "/auth/sign-out",
+  "/auth/refresh",
+] as const;
 
 const RETRY_MARKER_HEADER = "x-ag-vibe-auth-retried";
 const JSON_CONTENT_TYPE = "application/json";
 
-function isAuthEndpoint(url: string): boolean {
-  return /\/auth\/(sign-in|sign-up|sign-out|refresh)\/?$/.test(url);
+function normalizePathname(pathname: string): string {
+  const noQueryOrHash = pathname.split("#", 1)[0]?.split("?", 1)[0] ?? pathname;
+  const withLeadingSlash = noQueryOrHash.startsWith("/") ? noQueryOrHash : `/${noQueryOrHash}`;
+  const trimmed = withLeadingSlash.replace(/\/+$/, "");
+  return trimmed.length > 0 ? trimmed : "/";
+}
+
+function getPathname(url: string): string {
+  try {
+    return new URL(url, "http://ag-vibe.local").pathname;
+  } catch {
+    return normalizePathname(url);
+  }
+}
+
+function createAuthEndpointMatcher(paths: readonly string[]): (url: string) => boolean {
+  const normalized = paths.map((path) => normalizePathname(path));
+  return (url: string): boolean => {
+    const pathname = normalizePathname(getPathname(url));
+    return normalized.some((path) => pathname === path || pathname.endsWith(path));
+  };
 }
 
 function isBodyInit(value: unknown): value is NonNullable<RequestInit["body"]> {
@@ -148,9 +190,10 @@ interface RefreshResponse {
  * ```
  */
 export function createAuthClient(config: AuthClientConfig): AuthClient {
-  const { baseUrl: baseUrlOption, appId } = config;
+  const { baseUrl: baseUrlOption, appId, authEndpointPaths = DEFAULT_AUTH_ENDPOINT_PATHS } = config;
   const getBaseUrl = typeof baseUrlOption === "function" ? baseUrlOption : () => baseUrlOption;
   const store = createAuthStore(appId);
+  const isAuthEndpoint = createAuthEndpointMatcher(authEndpointPaths);
 
   let refreshInFlight: Promise<AuthSession | null> | null = null;
 

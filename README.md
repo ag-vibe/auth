@@ -44,7 +44,7 @@ auth.applyTo(apiClient);
 
 ## API
 
-### `createAuthClient({ baseUrl, appId })`
+### `createAuthClient({ baseUrl, appId, authEndpointPaths? })`
 
 Returns:
 
@@ -65,9 +65,19 @@ Returns:
 `applyTo(...)` response interceptor:
 
 1. Skip non-401 responses
-2. Skip auth endpoints (`/auth/sign-in`, `/auth/sign-up`, `/auth/sign-out`, `/auth/refresh`)
+2. Skip auth endpoints (defaults: `/auth/sign-in`, `/auth/sign-up`, `/auth/sign-out`, `/auth/refresh`)
 3. Refresh token once
 4. Retry original request with updated `Authorization` header
+
+You can override skipped auth paths:
+
+```ts
+const auth = createAuthClient({
+  baseUrl: "/api/v1",
+  appId: "todo",
+  authEndpointPaths: ["/identity/token/refresh", "/identity/sign-in"],
+});
+```
 
 ## Development
 
