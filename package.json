@@ -1,6 +1,6 @@
 {
   "name": "@ag-vibe/auth",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Authentication SDK for the ag-vibe ecosystem (allinone backend).",
   "homepage": "https://github.com/ag-vibe/auth#readme",
   "bugs": {
