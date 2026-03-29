@@ -10,6 +10,8 @@
  *
  * export const auth = createAuthClient({
  *   baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api/v1',
+ *   // or a function for runtime-configurable URLs:
+ *   // baseUrl: () => localStorage.getItem('apiUrl') ?? '/api/v1',
  *   appId: 'ido',
  * })
  *

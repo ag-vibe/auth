@@ -12,11 +12,14 @@ import { isTokenExpiringSoon } from "./core/jwt.ts";
 export interface AuthClientConfig {
   /**
    * Base URL of the allinone API, **without** a trailing slash.
+   * Can be a string or a function that returns the current base URL.
+   * Use a function when the URL can change at runtime (e.g. user-configurable).
    *
    * @example "/api/v1"
    * @example "https://api.example.com/api/v1"
+   * @example () => localStorage.getItem('apiUrl') ?? '/api/v1'
    */
-  baseUrl: string;
+  baseUrl: string | (() => string);
 
   /**
    * Unique identifier for this application.
@@ -42,7 +45,7 @@ export interface InterceptableClient {
         fn: (
           response: Response,
           request: Request,
-          options: { serializedBody?: unknown; signal?: AbortSignal },
+          options: { serializedBody?: unknown; signal?: AbortSignal | null },
         ) => Promise<Response> | Response,
       ) => number;
     };
@@ -145,7 +148,8 @@ interface RefreshResponse {
  * ```
  */
 export function createAuthClient(config: AuthClientConfig): AuthClient {
-  const { baseUrl, appId } = config;
+  const { baseUrl: baseUrlOption, appId } = config;
+  const getBaseUrl = typeof baseUrlOption === "function" ? baseUrlOption : () => baseUrlOption;
   const store = createAuthStore(appId);
 
   let refreshInFlight: Promise<AuthSession | null> | null = null;
@@ -158,7 +162,7 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
       if (!session?.refreshToken) return null;
 
       try {
-        const refreshed = await ofetch<RefreshResponse>(`${baseUrl}/auth/refresh`, {
+        const refreshed = await ofetch<RefreshResponse>(`${getBaseUrl()}/auth/refresh`, {
           method: "POST",
           body: { refreshToken: session.refreshToken },
         });
