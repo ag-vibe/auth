@@ -1,23 +1,23 @@
 {
   "name": "@ag-vibe/auth",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "Authentication SDK for the ag-vibe ecosystem (allinone backend).",
-  "homepage": "https://github.com/wibus-wee/ag-vibe-auth#readme",
+  "homepage": "https://github.com/ag-vibe/auth#readme",
   "bugs": {
-    "url": "https://github.com/wibus-wee/ag-vibe-auth/issues"
+    "url": "https://github.com/ag-vibe/auth/issues"
   },
   "license": "MIT",
   "author": "wibus-wee",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wibus-wee/ag-vibe-auth.git"
+    "url": "git+https://github.com/ag-vibe/auth.git"
   },
   "files": [
     "dist"
   ],
   "type": "module",
   "exports": {
-    ".": "./dist/index.mjs",
+    ".": "./dist/index.js",
     "./package.json": "./package.json"
   },
   "publishConfig": {
