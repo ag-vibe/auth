@@ -91,6 +91,15 @@ export interface AuthClient {
    * @param clients - A single client or an array of clients.
    */
   applyTo: (clients: InterceptableClient | InterceptableClient[]) => void;
+
+  /**
+   * Resolves once the zustand persist store has finished rehydrating from
+   * localStorage. Resolves immediately if already hydrated.
+   *
+   * Use this in async route guards (e.g. TanStack Router `beforeLoad`) to
+   * avoid redirecting to login before the persisted session is loaded.
+   */
+  waitForHydration: () => Promise<void>;
 }
 
 /** HTTP status codes indicating the credentials themselves are invalid. */
@@ -300,5 +309,15 @@ export function createAuthClient(config: AuthClientConfig): AuthClient {
     }
   }
 
-  return { store, ensureValidAccessToken, applyTo };
+  function waitForHydration(): Promise<void> {
+    if (store.persist.hasHydrated()) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const unsub = store.persist.onFinishHydration(() => {
+        unsub();
+        resolve();
+      });
+    });
+  }
+
+  return { store, ensureValidAccessToken, applyTo, waitForHydration };
 }
